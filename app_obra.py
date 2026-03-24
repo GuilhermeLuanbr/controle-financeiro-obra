@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS despesas_obra (
 
 conn.commit()
     banco_ok = True
-except:
+except Exception as e:
     banco_ok = False
-    st.warning("Banco offline no ambiente cloud")
+    st.error(f"Erro conexão: {e}")
 
 # título
 st.title("🏗️ Controle Financeiro da Obra")
