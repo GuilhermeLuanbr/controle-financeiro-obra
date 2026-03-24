@@ -102,6 +102,10 @@ with aba2:
     if banco_ok:
         st.sidebar.header("Filtros")
 
+        
+data_inicio = st.sidebar.date_input("Data inicial")
+data_fim = st.sidebar.date_input("Data final")
+
         fase_filtro = st.sidebar.selectbox(
             "Filtrar fase da obra",
             ["Todas", "fundação", "estrutura", "acabamento"]
@@ -112,27 +116,17 @@ with aba2:
             ["Todos", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
         )
 
-        if fase_filtro == "Todas" and mes_filtro == "Todos":
-            cursor.execute("SELECT * FROM despesas_obra")
-
-        elif fase_filtro != "Todas" and mes_filtro == "Todos":
-            cursor.execute(
-                "SELECT * FROM despesas_obra WHERE fase_obra = %s",
-                (fase_filtro,)
-            )
-
-        elif fase_filtro == "Todas" and mes_filtro != "Todos":
-            cursor.execute(
-                "SELECT * FROM despesas_obra WHERE EXTRACT(MONTH FROM data) = %s",
-                (mes_filtro,)
-            )
-
-        else:
-            cursor.execute("""
-                SELECT * FROM despesas_obra
-                WHERE fase_obra = %s
-                AND EXTRACT(MONTH FROM data) = %s
-            """, (fase_filtro, mes_filtro))
+if fase_filtro == "Todas":
+    cursor.execute("""
+        SELECT * FROM despesas_obra
+        WHERE data BETWEEN %s AND %s
+    """, (data_inicio, data_fim))
+else:
+    cursor.execute("""
+        SELECT * FROM despesas_obra
+        WHERE fase_obra = %s
+        AND data BETWEEN %s AND %s
+    """, (fase_filtro, data_inicio, data_fim))
 
         dados = cursor.fetchall()
 
