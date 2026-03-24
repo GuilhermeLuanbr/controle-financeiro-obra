@@ -13,25 +13,27 @@ st.set_page_config(
 # conexão protegida
 try:
     conn = psycopg2.connect(
-        host="db.fvcbhzsppyuawcajnlbw.supabase.co",
+        host="aws-1-us-east-1.pooler.supabase.com",
         database="postgres",
-        user="postgres",
-        password="SUA-SENHA",
+        user="postgres.fvcbhzsppyuawcajnlbw",
+        password="@guilherme121192",
         port="5432"
     )
+
     cursor = conn.cursor()
+
     cursor.execute("""
-CREATE TABLE IF NOT EXISTS despesas_obra (
-    id SERIAL PRIMARY KEY,
-    data DATE,
-    categoria TEXT,
-    descricao TEXT,
-    valor NUMERIC,
-    fornecedor TEXT,
-    fase_obra TEXT,
-    forma_pagamento TEXT
-)
-""")
+    CREATE TABLE IF NOT EXISTS despesas_obra (
+        id SERIAL PRIMARY KEY,
+        data DATE,
+        categoria TEXT,
+        descricao TEXT,
+        valor NUMERIC,
+        fornecedor TEXT,
+        fase_obra TEXT,
+        forma_pagamento TEXT
+    )
+    """)
 
     conn.commit()
     banco_ok = True
