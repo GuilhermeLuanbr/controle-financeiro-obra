@@ -181,6 +181,13 @@ if not df_base.empty:
     resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
     st.subheader("🏗️ Gastos por fase da obra")
     st.bar_chart(resumo_fase)
+
+if not df_base.empty:
+    df_base["mes"] = pd.to_datetime(df_base["data"]).dt.month
+    evolucao = df_base.groupby("mes")["valor"].sum()
+
+    st.subheader("📅 Evolução mensal dos gastos")
+    st.line_chart(evolucao)
 # ---------------- GESTÃO ----------------
 with aba3:
     st.header("Gestão de dados")
