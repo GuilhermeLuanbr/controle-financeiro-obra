@@ -160,13 +160,17 @@ with aba2:
             st.subheader("Resultado da busca")
             st.table(filtro)
 
-        col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
-        with col1:
-            st.metric("💰 Total Geral", f"R$ {df_base['valor'].sum()}")
+with col1:
+    st.metric("💰 Total Geral", f"R$ {df_base['valor'].sum():,.2f}")
 
-        with col2:
-            st.metric("📄 Quantidade de Registros", len(df_base))
+with col2:
+    st.metric("📄 Registros", len(df_base))
+
+with col3:
+    media = df_base["valor"].mean() if not df_base.empty else 0
+    st.metric("📊 Ticket Médio", f"R$ {media:,.2f}")
 
 # ---------------- GESTÃO ----------------
 with aba3:
