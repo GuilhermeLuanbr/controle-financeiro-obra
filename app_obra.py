@@ -13,10 +13,11 @@ st.set_page_config(
 # conexão protegida
 try:
     conn = psycopg2.connect(
-        host="localhost",
-        database="obra_casa",
+        host="db.fvcbhzsppyuawcajnlbw.supabase.co",
+        database="postgres",
         user="postgres",
-        password="postgres123"
+        password="SUA-SENHA",
+        port="5432"
     )
     cursor = conn.cursor()
     banco_ok = True
