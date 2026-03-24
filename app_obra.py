@@ -33,8 +33,9 @@ CREATE TABLE IF NOT EXISTS despesas_obra (
 )
 """)
 
-conn.commit()
+    conn.commit()
     banco_ok = True
+
 except Exception as e:
     banco_ok = False
     st.error(f"Erro conexão: {e}")
