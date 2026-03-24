@@ -20,6 +20,20 @@ try:
         port="5432"
     )
     cursor = conn.cursor()
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS despesas_obra (
+    id SERIAL PRIMARY KEY,
+    data DATE,
+    categoria TEXT,
+    descricao TEXT,
+    valor NUMERIC,
+    fornecedor TEXT,
+    fase_obra TEXT,
+    forma_pagamento TEXT
+)
+""")
+
+conn.commit()
     banco_ok = True
 except:
     banco_ok = False
