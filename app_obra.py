@@ -195,7 +195,34 @@ if not df_base.empty:
     st.subheader("🏆 Top 5 fornecedores")
     st.bar_chart(top_fornecedores)
 
+col_g1, col_g2 = st.columns(2)
 
+with col_g1:
+    if not df_base.empty:
+        resumo_categoria = df_base.groupby("categoria")["valor"].sum()
+        st.subheader("📈 Gastos por categoria")
+        st.bar_chart(resumo_categoria)
+
+with col_g2:
+    if not df_base.empty:
+        resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
+        st.subheader("🏗️ Gastos por fase da obra")
+        st.bar_chart(resumo_fase)
+
+col_g3, col_g4 = st.columns(2)
+
+with col_g3:
+    if not df_base.empty:
+        df_base["mes"] = pd.to_datetime(df_base["data"]).dt.month
+        evolucao = df_base.groupby("mes")["valor"].sum()
+        st.subheader("📅 Evolução mensal")
+        st.line_chart(evolucao)
+
+with col_g4:
+    if not df_base.empty:
+        top_fornecedores = df_base.groupby("fornecedor")["valor"].sum().sort_values(ascending=False).head(5)
+        st.subheader("🏆 Top fornecedores")
+        st.bar_chart(top_fornecedores)
 # ---------------- GESTÃO ----------------
 with aba3:
     st.header("Gestão de dados")
