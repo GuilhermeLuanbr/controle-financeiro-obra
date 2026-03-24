@@ -172,16 +172,15 @@ with col3:
     media = df_base["valor"].mean() if not df_base.empty else 0
     st.metric("📊 Ticket Médio", f"R$ {media:,.2f}")
     
-    if not df_base.empty:
+if not df_base.empty:
     resumo_categoria = df_base.groupby("categoria")["valor"].sum()
     st.subheader("📈 Gastos por categoria")
     st.bar_chart(resumo_categoria)
 
-    if not df_base.empty:
+if not df_base.empty:
     resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
     st.subheader("🏗️ Gastos por fase da obra")
     st.bar_chart(resumo_fase)
-
 # ---------------- GESTÃO ----------------
 with aba3:
     st.header("Gestão de dados")
