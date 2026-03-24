@@ -102,31 +102,25 @@ with aba2:
     if banco_ok:
         st.sidebar.header("Filtros")
 
-        
-data_inicio = st.sidebar.date_input("Data inicial")
-data_fim = st.sidebar.date_input("Data final")
-
         fase_filtro = st.sidebar.selectbox(
             "Filtrar fase da obra",
             ["Todas", "fundação", "estrutura", "acabamento"]
         )
 
-        mes_filtro = st.sidebar.selectbox(
-            "Filtrar mês",
-            ["Todos", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
-        )
+        data_inicio = st.sidebar.date_input("Data inicial")
+        data_fim = st.sidebar.date_input("Data final")
 
-if fase_filtro == "Todas":
-    cursor.execute("""
-        SELECT * FROM despesas_obra
-        WHERE data BETWEEN %s AND %s
-    """, (data_inicio, data_fim))
-else:
-    cursor.execute("""
-        SELECT * FROM despesas_obra
-        WHERE fase_obra = %s
-        AND data BETWEEN %s AND %s
-    """, (fase_filtro, data_inicio, data_fim))
+        if fase_filtro == "Todas":
+            cursor.execute("""
+                SELECT * FROM despesas_obra
+                WHERE data BETWEEN %s AND %s
+            """, (data_inicio, data_fim))
+        else:
+            cursor.execute("""
+                SELECT * FROM despesas_obra
+                WHERE fase_obra = %s
+                AND data BETWEEN %s AND %s
+            """, (fase_filtro, data_inicio, data_fim))
 
         dados = cursor.fetchall()
 
@@ -154,17 +148,17 @@ else:
             st.subheader("Resultado da busca")
             st.table(filtro)
 
-col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
 
-with col1:
-    st.metric("💰 Total Geral", f"R$ {df_base['valor'].sum():,.2f}")
+        with col1:
+            st.metric("💰 Total Geral", f"R$ {df_base['valor'].sum():,.2f}")
 
-with col2:
-    st.metric("📄 Registros", len(df_base))
+        with col2:
+            st.metric("📄 Registros", len(df_base))
 
-with col3:
-    media = df_base["valor"].mean() if not df_base.empty else 0
-    st.metric("📊 Ticket Médio", f"R$ {media:,.2f}")
+        with col3:
+            media = df_base["valor"].mean() if not df_base.empty else 0
+            st.metric("📊 Ticket Médio", f"R$ {media:,.2f}")
     
 if not df_base.empty:
     resumo_categoria = df_base.groupby("categoria")["valor"].sum()
