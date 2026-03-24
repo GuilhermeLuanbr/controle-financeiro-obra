@@ -188,6 +188,14 @@ if not df_base.empty:
 
     st.subheader("📅 Evolução mensal dos gastos")
     st.line_chart(evolucao)
+
+if not df_base.empty:
+    top_fornecedores = df_base.groupby("fornecedor")["valor"].sum().sort_values(ascending=False).head(5)
+
+    st.subheader("🏆 Top 5 fornecedores")
+    st.bar_chart(top_fornecedores)
+
+
 # ---------------- GESTÃO ----------------
 with aba3:
     st.header("Gestão de dados")
