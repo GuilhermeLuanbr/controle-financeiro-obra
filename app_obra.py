@@ -216,14 +216,14 @@ with aba3:
     st.header("Gestão de dados")
 
     if banco_ok:
-arquivo = df_base.to_csv(index=False).encode("utf-8")
+        arquivo = df_base.to_csv(index=False).encode("utf-8")
 
-st.download_button(
-    label="📂 Baixar CSV",
-    data=arquivo,
-    file_name="despesas_obra.csv",
-    mime="text/csv"
-)
+        st.download_button(
+            label="📂 Baixar CSV",
+            data=arquivo,
+            file_name="despesas_obra.csv",
+            mime="text/csv"
+        )
 
         id_excluir = st.number_input("ID para excluir", step=1)
 
