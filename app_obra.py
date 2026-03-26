@@ -216,10 +216,14 @@ with aba3:
     st.header("Gestão de dados")
 
     if banco_ok:
-        if st.button("Exportar para Excel"):
-            nome_arquivo = f"despesas_obra_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx"
-            df_base.to_excel(nome_arquivo, index=False)
-            st.success(f"Arquivo {nome_arquivo} criado!")
+arquivo = df_base.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    label="📂 Baixar CSV",
+    data=arquivo,
+    file_name="despesas_obra.csv",
+    mime="text/csv"
+)
 
         id_excluir = st.number_input("ID para excluir", step=1)
 
