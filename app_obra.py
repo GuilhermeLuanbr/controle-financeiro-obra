@@ -317,19 +317,25 @@ with aba3:
                 label="Baixar CSV das despesas",
                 data=arquivo,
                 file_name="despesas_obra.csv",
-                mime="text/csv"
+                mime="text/csv",
+                key="download_csv_gestao"
             )
 
         # -------- EXCLUSÃO --------
         with col_b:
             st.subheader("🗑️ Excluir despesa")
 
-            id_excluir = st.number_input("ID para excluir", min_value=1, step=1, key="id_excluir")
+            id_excluir_gestao = st.number_input(
+                "ID para excluir",
+                min_value=1,
+                step=1,
+                key="id_excluir_gestao"
+            )
 
-            if st.button("Excluir despesa"):
+            if st.button("Excluir despesa", key="btn_excluir_gestao"):
                 cursor.execute(
                     "DELETE FROM despesas_obra WHERE id = %s",
-                    (id_excluir,)
+                    (id_excluir_gestao,)
                 )
                 conn.commit()
                 st.success("Despesa excluída!")
@@ -339,19 +345,24 @@ with aba3:
         # -------- EDITAR DESPESA --------
         st.subheader("✏️ Editar despesa")
 
-        id_editar = st.number_input("ID para editar", min_value=1, step=1, key="id_editar")
+        id_editar_gestao = st.number_input(
+            "ID para editar",
+            min_value=1,
+            step=1,
+            key="id_editar_gestao"
+        )
 
-        if st.button("Carregar despesa"):
+        if st.button("Carregar despesa", key="btn_carregar_despesa"):
             cursor.execute("""
                 SELECT data, categoria, descricao, valor, fornecedor, fase_obra, forma_pagamento
                 FROM despesas_obra
                 WHERE id = %s
-            """, (id_editar,))
+            """, (id_editar_gestao,))
             despesa = cursor.fetchone()
 
             if despesa:
                 st.session_state["despesa_edicao"] = {
-                    "id": id_editar,
+                    "id": id_editar_gestao,
                     "data": despesa[0],
                     "categoria": despesa[1],
                     "descricao": despesa[2],
@@ -377,21 +388,24 @@ with aba3:
             with col2:
                 novo_fornecedor = st.text_input("Novo fornecedor", value=desp["fornecedor"], key="edit_fornecedor")
 
+                fases = ["fundação", "estrutura", "acabamento"]
+                pagamentos = ["pix", "dinheiro", "cartão", "boleto"]
+
                 nova_fase = st.selectbox(
                     "Nova fase da obra",
-                    ["fundação", "estrutura", "acabamento"],
-                    index=["fundação", "estrutura", "acabamento"].index(desp["fase_obra"]) if desp["fase_obra"] in ["fundação", "estrutura", "acabamento"] else 0,
+                    fases,
+                    index=fases.index(desp["fase_obra"]) if desp["fase_obra"] in fases else 0,
                     key="edit_fase"
                 )
 
                 novo_pagamento = st.selectbox(
                     "Nova forma de pagamento",
-                    ["pix", "dinheiro", "cartão", "boleto"],
-                    index=["pix", "dinheiro", "cartão", "boleto"].index(desp["forma_pagamento"]) if desp["forma_pagamento"] in ["pix", "dinheiro", "cartão", "boleto"] else 0,
+                    pagamentos,
+                    index=pagamentos.index(desp["forma_pagamento"]) if desp["forma_pagamento"] in pagamentos else 0,
                     key="edit_pagamento"
                 )
 
-            if st.button("Atualizar despesa"):
+            if st.button("Atualizar despesa", key="btn_atualizar_despesa"):
                 cursor.execute("""
                     UPDATE despesas_obra
                     SET data = %s,
