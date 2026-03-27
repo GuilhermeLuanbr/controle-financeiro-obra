@@ -305,15 +305,36 @@ with aba3:
     st.header("Gestão de dados")
 
     if banco_ok:
-        # download CSV
-        arquivo = df_base.to_csv(index=False).encode("utf-8")
+        col_a, col_b = st.columns(2)
 
-        st.download_button(
-            label="📂 Baixar CSV",
-            data=arquivo,
-            file_name="despesas_obra.csv",
-            mime="text/csv"
-        )
+        # -------- EXPORTAÇÃO --------
+        with col_a:
+            st.subheader("📂 Exportação")
+
+            arquivo = df_base.to_csv(index=False).encode("utf-8")
+
+            st.download_button(
+                label="Baixar CSV das despesas",
+                data=arquivo,
+                file_name="despesas_obra.csv",
+                mime="text/csv"
+            )
+
+        # -------- EXCLUSÃO --------
+        with col_b:
+            st.subheader("🗑️ Excluir despesa")
+
+            id_excluir = st.number_input("ID para excluir", min_value=1, step=1, key="id_excluir")
+
+            if st.button("Excluir despesa"):
+                cursor.execute(
+                    "DELETE FROM despesas_obra WHERE id = %s",
+                    (id_excluir,)
+                )
+                conn.commit()
+                st.success("Despesa excluída!")
+
+        st.markdown("---")
 
         # -------- EDITAR DESPESA --------
         st.subheader("✏️ Editar despesa")
@@ -345,25 +366,30 @@ with aba3:
         if "despesa_edicao" in st.session_state:
             desp = st.session_state["despesa_edicao"]
 
-            nova_data = st.date_input("Nova data", value=desp["data"], key="edit_data")
-            nova_categoria = st.text_input("Nova categoria", value=desp["categoria"], key="edit_categoria")
-            nova_descricao = st.text_input("Nova descrição", value=desp["descricao"], key="edit_descricao")
-            novo_valor = st.number_input("Novo valor", value=desp["valor"], key="edit_valor")
-            novo_fornecedor = st.text_input("Novo fornecedor", value=desp["fornecedor"], key="edit_fornecedor")
+            col1, col2 = st.columns(2)
 
-            nova_fase = st.selectbox(
-                "Nova fase da obra",
-                ["fundação", "estrutura", "acabamento"],
-                index=["fundação", "estrutura", "acabamento"].index(desp["fase_obra"]) if desp["fase_obra"] in ["fundação", "estrutura", "acabamento"] else 0,
-                key="edit_fase"
-            )
+            with col1:
+                nova_data = st.date_input("Nova data", value=desp["data"], key="edit_data")
+                nova_categoria = st.text_input("Nova categoria", value=desp["categoria"], key="edit_categoria")
+                nova_descricao = st.text_input("Nova descrição", value=desp["descricao"], key="edit_descricao")
+                novo_valor = st.number_input("Novo valor", value=desp["valor"], key="edit_valor")
 
-            novo_pagamento = st.selectbox(
-                "Nova forma de pagamento",
-                ["pix", "dinheiro", "cartão", "boleto"],
-                index=["pix", "dinheiro", "cartão", "boleto"].index(desp["forma_pagamento"]) if desp["forma_pagamento"] in ["pix", "dinheiro", "cartão", "boleto"] else 0,
-                key="edit_pagamento"
-            )
+            with col2:
+                novo_fornecedor = st.text_input("Novo fornecedor", value=desp["fornecedor"], key="edit_fornecedor")
+
+                nova_fase = st.selectbox(
+                    "Nova fase da obra",
+                    ["fundação", "estrutura", "acabamento"],
+                    index=["fundação", "estrutura", "acabamento"].index(desp["fase_obra"]) if desp["fase_obra"] in ["fundação", "estrutura", "acabamento"] else 0,
+                    key="edit_fase"
+                )
+
+                novo_pagamento = st.selectbox(
+                    "Nova forma de pagamento",
+                    ["pix", "dinheiro", "cartão", "boleto"],
+                    index=["pix", "dinheiro", "cartão", "boleto"].index(desp["forma_pagamento"]) if desp["forma_pagamento"] in ["pix", "dinheiro", "cartão", "boleto"] else 0,
+                    key="edit_pagamento"
+                )
 
             if st.button("Atualizar despesa"):
                 cursor.execute("""
@@ -389,7 +415,7 @@ with aba3:
                 conn.commit()
                 st.success("Despesa atualizada com sucesso!")
                 del st.session_state["despesa_edicao"]
-
+                
         # -------- EXCLUIR --------
         st.subheader("🗑️ Excluir despesa")
 
