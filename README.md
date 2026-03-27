@@ -1,22 +1,57 @@
-# Gestão Financeiro da Obra
+# Gestão Financeira de Obra
 
-Aplicação web desenvolvida em Python com Streamlit para controle de despesas de uma obra, com dashboard interativo, CRUD completo e banco de dados em nuvem.
+Aplicação web desenvolvida em Python para controle e análise de despesas de construção de uma casa residencial, com dashboard interativo, banco de dados em nuvem e funcionalidades completas de gestão financeira.
 
-## Funcionalidades
+# Demonstração
 
-- Cadastro de despesas
-- Visualização em dashboard
-- Edição de registros
-- Exclusão de despesas
-- Exportação em CSV
-- Filtros por fase e período
-- KPIs financeiros
-- Login simples
-- Banco PostgreSQL em nuvem com Supabase
-- Deploy online com Streamlit Cloud
+🔗 Acesse o sistema online:  
+(https://guilhermeluanbr-controle-financeiro-obra-app-obra-bs4eio.streamlit.app/)
 
-## Tecnologias utilizadas
+# Objetivo
 
+Este projeto foi desenvolvido com foco em simular um cenário real de análise de dados aplicada à gestão financeira de uma obra, integrando:
+- coleta de dados
+- armazenamento em banco
+- análise e visualização
+- tomada de decisão baseada em dados
+
+# Funcionalidades
+
+# Cadastro de dados
+  # Inserção de despesas com:
+  - data
+  - categoria
+  - fornecedor
+  - fase da obra
+  - forma de pagamento
+
+# Dashboard interativo
+- KPIs principais:
+  - total de gastos
+  - quantidade de registros
+  - ticket médio
+  # gráficos:
+  - gastos por categoria
+  - gastos por fase da obra
+  - evolução mensal
+  - top fornecedores
+
+# Filtros avançados
+- período personalizado
+- fase da obra
+- múltiplas categorias
+- múltiplos fornecedores
+
+# Análise comparativa
+- comparação com período anterior
+- cálculo de variação percentual (%)
+
+# Gestão de dados (CRUD)
+- edição de despesas
+- exclusão de registros
+- exportação para CSV
+
+# Tecnologias utilizadas
 - Python
 - Streamlit
 - PostgreSQL
@@ -25,40 +60,37 @@ Aplicação web desenvolvida em Python com Streamlit para controle de despesas d
 - GitHub
 - Streamlit Community Cloud
 
-## Indicadores do dashboard
+# Arquitetura
+- Frontend: Streamlit
+- Backend: Python
+- Banco de dados: PostgreSQL (Supabase)
+- Deploy: Streamlit Cloud
 
-- Total geral de gastos
-- Quantidade de registros
-- Ticket médio
-- Gastos por categoria
-- Gastos por fase da obra
-- Evolução mensal
-- Top fornecedores
+# Segurança
+- uso de variáveis sensíveis via 'secrets'
+- conexão com banco em nuvem
 
-## Deploy
+# Diferenciais do projeto
+- Dashboard com filtros dinâmicos
+- Query SQL dinâmica com múltiplos parâmetros
+- Integração com banco em nuvem
+- Aplicação completa (CRUD + análise)
+- Deploy funcional acessível online
 
-A aplicação foi publicada online com Streamlit Community Cloud e utiliza banco em nuvem no Supabase.
+# Aprendizados
+Durante o desenvolvimento, foram aplicados conceitos como:
+- manipulação de dados com Pandas
+- integração Python + PostgreSQL
+- construção de dashboards interativos
+- deploy de aplicações em nuvem
+- estruturação de projetos para portfólio
 
-## Acesso
-
-Login atual para demonstração:
-
-- Usuário: `admin`
-- Senha: `1234`
-
-## Objetivo do projeto
-
-Este projeto foi desenvolvido para praticar:
-
-- integração entre app e banco de dados
-- análise de dados aplicada
-- deploy em nuvem
-- construção de portfólio para área de dados
-
-## Próximas melhorias
-
+# Próximas melhorias
 - autenticação com múltiplos usuários
-- exportação em PDF
-- dashboard ainda mais visual
 - controle de orçamento planejado vs realizado
-- permissões de acesso
+- exportação em PDF
+- melhorias de UI/UX
+- deploy em ambiente mais robusto (AWS/Render)
+
+## Autor
+Guilherme Luan Fernandes
