@@ -129,18 +129,45 @@ with aba2:
         data_inicio = st.sidebar.date_input("Data inicial")
         data_fim = st.sidebar.date_input("Data final")
 
-        if fase_filtro == "Todas":
-            cursor.execute("""
-                SELECT * FROM despesas_obra
-                WHERE data BETWEEN %s AND %s
-            """, (data_inicio, data_fim))
-        else:
-            cursor.execute("""
-                SELECT * FROM despesas_obra
-                WHERE fase_obra = %s
-                AND data BETWEEN %s AND %s
-            """, (fase_filtro, data_inicio, data_fim))
+        cursor.execute("SELECT DISTINCT categoria FROM despesas_obra ORDER BY categoria")
+        categorias_db = [linha[0] for linha in cursor.fetchall() if linha[0]]
 
+        categoria_filtro = st.sidebar.multiselect(
+            "Filtrar categoria",
+            categorias_db
+        )
+
+        cursor.execute("SELECT DISTINCT fornecedor FROM despesas_obra ORDER BY fornecedor")
+        fornecedores_db = [linha[0] for linha in cursor.fetchall() if linha[0]]
+
+        fornecedor_filtro = st.sidebar.multiselect(
+            "Filtrar fornecedor",
+            fornecedores_db
+        )
+
+        query = """
+            SELECT * FROM despesas_obra
+            WHERE data BETWEEN %s AND %s
+        """
+        params = [data_inicio, data_fim]
+
+        if fase_filtro != "Todas":
+            query += " AND fase_obra = %s"
+            params.append(fase_filtro)
+
+        if categoria_filtro:
+            placeholders = ", ".join(["%s"] * len(categoria_filtro))
+            query += f" AND categoria IN ({placeholders})"
+            params.extend(categoria_filtro)
+
+        if fornecedor_filtro:
+            placeholders = ", ".join(["%s"] * len(fornecedor_filtro))
+            query += f" AND fornecedor IN ({placeholders})"
+            params.extend(fornecedor_filtro)
+
+        query += " ORDER BY data DESC"
+
+        cursor.execute(query, params)
         dados = cursor.fetchall()
 
         df_base = pd.DataFrame(
@@ -153,6 +180,17 @@ with aba2:
 
         st.write("Despesas registradas:")
         st.table(df_base)
+
+        st.subheader("🔎 Resumo do filtro aplicado")
+
+        filtros_ativos = {
+            "Período": f"{data_inicio} até {data_fim}",
+            "Fase": fase_filtro,
+            "Categorias": ", ".join(categoria_filtro) if categoria_filtro else "Todas",
+            "Fornecedores": ", ".join(fornecedor_filtro) if fornecedor_filtro else "Todos"
+        }
+
+        st.json(filtros_ativos)
 
         fornecedor_busca = st.text_input("Buscar fornecedor")
 
@@ -178,58 +216,35 @@ with aba2:
         with col3:
             media = df_base["valor"].mean() if not df_base.empty else 0
             st.metric("📊 Ticket Médio", f"R$ {media:,.2f}")
-    
-if not df_base.empty:
-    resumo_categoria = df_base.groupby("categoria")["valor"].sum()
-    st.subheader("📈 Gastos por categoria")
-    st.bar_chart(resumo_categoria)
 
-if not df_base.empty:
-    resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
-    st.subheader("🏗️ Gastos por fase da obra")
-    st.bar_chart(resumo_fase)
+        col_g1, col_g2 = st.columns(2)
 
-if not df_base.empty:
-    df_base["mes"] = pd.to_datetime(df_base["data"]).dt.month
-    evolucao = df_base.groupby("mes")["valor"].sum()
+        with col_g1:
+            if not df_base.empty:
+                resumo_categoria = df_base.groupby("categoria")["valor"].sum()
+                st.subheader("📈 Gastos por categoria")
+                st.bar_chart(resumo_categoria)
 
-    st.subheader("📅 Evolução mensal dos gastos")
-    st.line_chart(evolucao)
+        with col_g2:
+            if not df_base.empty:
+                resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
+                st.subheader("🏗️ Gastos por fase da obra")
+                st.bar_chart(resumo_fase)
 
-if not df_base.empty:
-    top_fornecedores = df_base.groupby("fornecedor")["valor"].sum().sort_values(ascending=False).head(5)
+        col_g3, col_g4 = st.columns(2)
 
-    st.subheader("🏆 Top 5 fornecedores")
-    st.bar_chart(top_fornecedores)
+        with col_g3:
+            if not df_base.empty:
+                df_base["mes"] = pd.to_datetime(df_base["data"]).dt.month
+                evolucao = df_base.groupby("mes")["valor"].sum()
+                st.subheader("📅 Evolução mensal")
+                st.line_chart(evolucao)
 
-col_g1, col_g2 = st.columns(2)
-
-with col_g1:
-    if not df_base.empty:
-        resumo_categoria = df_base.groupby("categoria")["valor"].sum()
-        st.subheader("📈 Gastos por categoria")
-        st.bar_chart(resumo_categoria)
-
-with col_g2:
-    if not df_base.empty:
-        resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
-        st.subheader("🏗️ Gastos por fase da obra")
-        st.bar_chart(resumo_fase)
-
-col_g3, col_g4 = st.columns(2)
-
-with col_g3:
-    if not df_base.empty:
-        df_base["mes"] = pd.to_datetime(df_base["data"]).dt.month
-        evolucao = df_base.groupby("mes")["valor"].sum()
-        st.subheader("📅 Evolução mensal")
-        st.line_chart(evolucao)
-
-with col_g4:
-    if not df_base.empty:
-        top_fornecedores = df_base.groupby("fornecedor")["valor"].sum().sort_values(ascending=False).head(5)
-        st.subheader("🏆 Top fornecedores")
-        st.bar_chart(top_fornecedores)
+        with col_g4:
+            if not df_base.empty:
+                top_fornecedores = df_base.groupby("fornecedor")["valor"].sum().sort_values(ascending=False).head(5)
+                st.subheader("🏆 Top fornecedores")
+                st.bar_chart(top_fornecedores)
 # ---------------- GESTÃO ----------------
 with aba3:
     st.header("Gestão de dados")
