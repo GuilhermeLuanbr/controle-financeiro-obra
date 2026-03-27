@@ -128,6 +128,7 @@ with aba2:
 
         data_inicio = st.sidebar.date_input("Data inicial")
         data_fim = st.sidebar.date_input("Data final")
+        comparar = st.sidebar.checkbox("Comparar com período anterior")
 
         cursor.execute("SELECT DISTINCT categoria FROM despesas_obra ORDER BY categoria")
         categorias_db = [linha[0] for linha in cursor.fetchall() if linha[0]]
@@ -178,6 +179,47 @@ with aba2:
             ]
         )
 
+        if comparar:
+            dias = (data_fim - data_inicio).days
+
+            data_inicio_ant = data_inicio - pd.Timedelta(days=dias)
+            data_fim_ant = data_inicio
+
+            query_ant = """
+                SELECT * FROM despesas_obra
+                WHERE data BETWEEN %s AND %s
+            """
+            params_ant = [data_inicio_ant, data_fim_ant]
+
+            if fase_filtro != "Todas":
+                query_ant += " AND fase_obra = %s"
+                params_ant.append(fase_filtro)
+
+            if categoria_filtro:
+                placeholders_ant = ", ".join(["%s"] * len(categoria_filtro))
+                query_ant += f" AND categoria IN ({placeholders_ant})"
+                params_ant.extend(categoria_filtro)
+
+            if fornecedor_filtro:
+                placeholders_ant = ", ".join(["%s"] * len(fornecedor_filtro))
+                query_ant += f" AND fornecedor IN ({placeholders_ant})"
+                params_ant.extend(fornecedor_filtro)
+
+            query_ant += " ORDER BY data DESC"
+
+            cursor.execute(query_ant, params_ant)
+            dados_ant = cursor.fetchall()
+
+            df_ant = pd.DataFrame(
+                dados_ant,
+                columns=[
+                    "id", "data", "categoria", "descricao",
+                    "valor", "fornecedor", "fase_obra", "forma_pagamento"
+                ]
+            )
+        else:
+            df_ant = pd.DataFrame()
+
         st.write("Despesas registradas:")
         st.table(df_base)
 
@@ -187,7 +229,8 @@ with aba2:
             "Período": f"{data_inicio} até {data_fim}",
             "Fase": fase_filtro,
             "Categorias": ", ".join(categoria_filtro) if categoria_filtro else "Todas",
-            "Fornecedores": ", ".join(fornecedor_filtro) if fornecedor_filtro else "Todos"
+            "Fornecedores": ", ".join(fornecedor_filtro) if fornecedor_filtro else "Todos",
+            "Comparação": "Ativada" if comparar else "Desativada"
         }
 
         st.json(filtros_ativos)
@@ -207,8 +250,20 @@ with aba2:
 
         col1, col2, col3 = st.columns(3)
 
+        total_atual = df_base["valor"].sum()
+
+        if comparar and not df_ant.empty:
+            total_ant = df_ant["valor"].sum()
+            variacao = ((total_atual - total_ant) / total_ant * 100) if total_ant != 0 else 0
+        else:
+            variacao = 0
+
         with col1:
-            st.metric("💰 Total Geral", f"R$ {df_base['valor'].sum():,.2f}")
+            st.metric(
+                "💰 Total Geral",
+                f"R$ {total_atual:,.2f}",
+                f"{variacao:.2f}%"
+            )
 
         with col2:
             st.metric("📄 Registros", len(df_base))
