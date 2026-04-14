@@ -3,6 +3,13 @@ import psycopg2
 import pandas as pd
 from datetime import datetime
 
+# -------- CONFIG --------
+st.set_page_config(
+    page_title="Controle Financeiro da Obra",
+    page_icon="🏗️",
+    layout="centered"
+)
+
 # -------- LOGIN --------
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
@@ -22,14 +29,10 @@ if not st.session_state["logado"]:
 
     st.stop()
 
-# Ajustes de tela
-st.set_page_config(
-    page_title="Controle Financeiro da Obra",
-    page_icon="🏗️",
-    layout="wide"
-)
+# -------- MOBILE --------
+mobile = st.sidebar.checkbox("📱 Modo Mobile")
 
-# conexão protegida
+# -------- CONEXÃO --------
 try:
     conn = psycopg2.connect(
         host="aws-1-us-east-1.pooler.supabase.com",
@@ -38,49 +41,17 @@ try:
         password=st.secrets["DB_PASSWORD"],
         port="5432"
     )
-
     cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS despesas_obra (
-        id SERIAL PRIMARY KEY,
-        data DATE,
-        categoria TEXT,
-        descricao TEXT,
-        valor NUMERIC,
-        fornecedor TEXT,
-        fase_obra TEXT,
-        forma_pagamento TEXT
-    )
-    """)
-
-    conn.commit()
     banco_ok = True
-
-except Exception as e:
+except:
     banco_ok = False
-    st.error(f"Erro conexão: {e}")
+    st.warning("Banco offline")
 
-# título
+# -------- TÍTULO --------
 st.title("🏗️ Controle Financeiro da Obra")
 st.markdown("---")
 
-st.markdown("""
-<style>
-div[data-testid="metric-container"] {
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    padding: 15px;
-    border-radius: 10px;
-}
-
-section[data-testid="stSidebar"] {
-    background-color: #f0f2f6;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# abas
+# -------- ABAS --------
 aba1, aba2, aba3 = st.tabs(["Cadastro", "Dashboard", "Gestão"])
 
 # ---------------- CADASTRO ----------------
@@ -88,21 +59,32 @@ with aba1:
     st.header("Cadastro de despesas")
 
     if banco_ok:
-        data = st.date_input("Data")
-        categoria = st.text_input("Categoria")
-        descricao = st.text_input("Descrição")
-        valor = st.number_input("Valor")
-        fornecedor = st.text_input("Fornecedor")
 
-        fase = st.selectbox(
-            "Fase da obra",
-            ["fundação", "estrutura", "acabamento"]
-        )
+        if mobile:
+            data = st.date_input("Data")
+            categoria = st.text_input("Categoria")
+            valor = st.number_input("Valor")
 
-        pagamento = st.selectbox(
-            "Forma de pagamento",
-            ["pix", "dinheiro", "cartão", "boleto"]
-        )
+            fornecedor = st.text_input("Fornecedor")
+            fase = st.selectbox("Fase", ["fundação", "estrutura", "acabamento"])
+            pagamento = st.selectbox("Pagamento", ["pix", "dinheiro", "cartão", "boleto"])
+
+            descricao = st.text_area("Descrição")
+
+        else:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                data = st.date_input("Data")
+                categoria = st.text_input("Categoria")
+                valor = st.number_input("Valor")
+
+            with col2:
+                fornecedor = st.text_input("Fornecedor")
+                fase = st.selectbox("Fase", ["fundação", "estrutura", "acabamento"])
+                pagamento = st.selectbox("Pagamento", ["pix", "dinheiro", "cartão", "boleto"])
+
+            descricao = st.text_area("Descrição")
 
         if st.button("Salvar"):
             cursor.execute("""
@@ -112,333 +94,78 @@ with aba1:
             """, (data, categoria, descricao, valor, fornecedor, fase, pagamento))
 
             conn.commit()
-            st.success("Despesa salva com sucesso!")
+            st.success("Despesa salva!")
 
 # ---------------- DASHBOARD ----------------
 with aba2:
-    st.header("Dashboard financeiro")
+    st.header("Dashboard")
 
     if banco_ok:
         st.sidebar.header("Filtros")
 
-        fase_filtro = st.sidebar.selectbox(
-            "Filtrar fase da obra",
-            ["Todas", "fundação", "estrutura", "acabamento"]
-        )
-
         data_inicio = st.sidebar.date_input("Data inicial")
         data_fim = st.sidebar.date_input("Data final")
-        comparar = st.sidebar.checkbox("Comparar com período anterior")
 
-        cursor.execute("SELECT DISTINCT categoria FROM despesas_obra ORDER BY categoria")
-        categorias_db = [linha[0] for linha in cursor.fetchall() if linha[0]]
-
-        categoria_filtro = st.sidebar.multiselect(
-            "Filtrar categoria",
-            categorias_db
-        )
-
-        cursor.execute("SELECT DISTINCT fornecedor FROM despesas_obra ORDER BY fornecedor")
-        fornecedores_db = [linha[0] for linha in cursor.fetchall() if linha[0]]
-
-        fornecedor_filtro = st.sidebar.multiselect(
-            "Filtrar fornecedor",
-            fornecedores_db
-        )
-
-        query = """
-            SELECT * FROM despesas_obra
-            WHERE data BETWEEN %s AND %s
-        """
-        params = [data_inicio, data_fim]
-
-        if fase_filtro != "Todas":
-            query += " AND fase_obra = %s"
-            params.append(fase_filtro)
-
-        if categoria_filtro:
-            placeholders = ", ".join(["%s"] * len(categoria_filtro))
-            query += f" AND categoria IN ({placeholders})"
-            params.extend(categoria_filtro)
-
-        if fornecedor_filtro:
-            placeholders = ", ".join(["%s"] * len(fornecedor_filtro))
-            query += f" AND fornecedor IN ({placeholders})"
-            params.extend(fornecedor_filtro)
-
-        query += " ORDER BY data DESC"
-
-        cursor.execute(query, params)
+        cursor.execute("SELECT * FROM despesas_obra WHERE data BETWEEN %s AND %s", (data_inicio, data_fim))
         dados = cursor.fetchall()
 
-        df_base = pd.DataFrame(
-            dados,
-            columns=[
-                "id", "data", "categoria", "descricao",
-                "valor", "fornecedor", "fase_obra", "forma_pagamento"
-            ]
-        )
+        df = pd.DataFrame(dados, columns=[
+            "id","data","categoria","descricao","valor","fornecedor","fase","pagamento"
+        ])
 
-        if comparar:
-            dias = (data_fim - data_inicio).days
+        total = df["valor"].sum()
+        media = df["valor"].mean() if not df.empty else 0
 
-            data_inicio_ant = data_inicio - pd.Timedelta(days=dias)
-            data_fim_ant = data_inicio
-
-            query_ant = """
-                SELECT * FROM despesas_obra
-                WHERE data BETWEEN %s AND %s
-            """
-            params_ant = [data_inicio_ant, data_fim_ant]
-
-            if fase_filtro != "Todas":
-                query_ant += " AND fase_obra = %s"
-                params_ant.append(fase_filtro)
-
-            if categoria_filtro:
-                placeholders_ant = ", ".join(["%s"] * len(categoria_filtro))
-                query_ant += f" AND categoria IN ({placeholders_ant})"
-                params_ant.extend(categoria_filtro)
-
-            if fornecedor_filtro:
-                placeholders_ant = ", ".join(["%s"] * len(fornecedor_filtro))
-                query_ant += f" AND fornecedor IN ({placeholders_ant})"
-                params_ant.extend(fornecedor_filtro)
-
-            query_ant += " ORDER BY data DESC"
-
-            cursor.execute(query_ant, params_ant)
-            dados_ant = cursor.fetchall()
-
-            df_ant = pd.DataFrame(
-                dados_ant,
-                columns=[
-                    "id", "data", "categoria", "descricao",
-                    "valor", "fornecedor", "fase_obra", "forma_pagamento"
-                ]
-            )
-        else:
-            df_ant = pd.DataFrame()
-
-        st.write("Despesas registradas:")
-        st.table(df_base)
-
-        st.subheader("🔎 Resumo do filtro aplicado")
-
-        filtros_ativos = {
-            "Período": f"{data_inicio} até {data_fim}",
-            "Fase": fase_filtro,
-            "Categorias": ", ".join(categoria_filtro) if categoria_filtro else "Todas",
-            "Fornecedores": ", ".join(fornecedor_filtro) if fornecedor_filtro else "Todos",
-            "Comparação": "Ativada" if comparar else "Desativada"
-        }
-
-        st.json(filtros_ativos)
-
-        fornecedor_busca = st.text_input("Buscar fornecedor")
-
-        if fornecedor_busca:
-            filtro = df_base[
-                df_base["fornecedor"].str.contains(
-                    fornecedor_busca,
-                    case=False,
-                    na=False
-                )
-            ]
-            st.subheader("Resultado da busca")
-            st.table(filtro)
-
-        col1, col2, col3 = st.columns(3)
-
-        total_atual = df_base["valor"].sum()
-
-        if comparar and not df_ant.empty:
-            total_ant = df_ant["valor"].sum()
-            variacao = ((total_atual - total_ant) / total_ant * 100) if total_ant != 0 else 0
-        else:
-            variacao = 0
-
-        with col1:
-            st.metric(
-                "💰 Total Geral",
-                f"R$ {total_atual:,.2f}",
-                f"{variacao:.2f}%"
-            )
-
-        with col2:
-            st.metric("📄 Registros", len(df_base))
-
-        with col3:
-            media = df_base["valor"].mean() if not df_base.empty else 0
-            st.metric("📊 Ticket Médio", f"R$ {media:,.2f}")
-
-        col_g1, col_g2 = st.columns(2)
-
-        with col_g1:
-            if not df_base.empty:
-                resumo_categoria = df_base.groupby("categoria")["valor"].sum()
-                st.subheader("📈 Gastos por categoria")
-                st.bar_chart(resumo_categoria)
-
-        with col_g2:
-            if not df_base.empty:
-                resumo_fase = df_base.groupby("fase_obra")["valor"].sum()
-                st.subheader("🏗️ Gastos por fase da obra")
-                st.bar_chart(resumo_fase)
-
-        col_g3, col_g4 = st.columns(2)
-
-        with col_g3:
-            if not df_base.empty:
-                df_base["mes"] = pd.to_datetime(df_base["data"]).dt.month
-                evolucao = df_base.groupby("mes")["valor"].sum()
-                st.subheader("📅 Evolução mensal")
-                st.line_chart(evolucao)
-
-        with col_g4:
-            if not df_base.empty:
-                top_fornecedores = df_base.groupby("fornecedor")["valor"].sum().sort_values(ascending=False).head(5)
-                st.subheader("🏆 Top fornecedores")
-                st.bar_chart(top_fornecedores)
-# ---------------- GESTÃO ----------------
-with aba3:
-    st.header("Gestão de dados")
-
-    if banco_ok:
-        col_a, col_b = st.columns(2)
-
-        # -------- EXPORTAÇÃO --------
-        with col_a:
-            st.subheader("📂 Exportação")
-
-            arquivo = df_base.to_csv(index=False).encode("utf-8")
-
-            st.download_button(
-                label="Baixar CSV das despesas",
-                data=arquivo,
-                file_name="despesas_obra.csv",
-                mime="text/csv",
-                key="download_csv_gestao"
-            )
-
-        # -------- EXCLUSÃO --------
-        with col_b:
-            st.subheader("🗑️ Excluir despesa")
-
-            id_excluir_gestao = st.number_input(
-                "ID para excluir",
-                min_value=1,
-                step=1,
-                key="id_excluir_gestao"
-            )
-
-            if st.button("Excluir despesa", key="btn_excluir_gestao"):
-                cursor.execute(
-                    "DELETE FROM despesas_obra WHERE id = %s",
-                    (id_excluir_gestao,)
-                )
-                conn.commit()
-                st.success("Despesa excluída!")
-
-        st.markdown("---")
-
-        # -------- EDITAR DESPESA --------
-        st.subheader("✏️ Editar despesa")
-
-        id_editar_gestao = st.number_input(
-            "ID para editar",
-            min_value=1,
-            step=1,
-            key="id_editar_gestao"
-        )
-
-        if st.button("Carregar despesa", key="btn_carregar_despesa"):
-            cursor.execute("""
-                SELECT data, categoria, descricao, valor, fornecedor, fase_obra, forma_pagamento
-                FROM despesas_obra
-                WHERE id = %s
-            """, (id_editar_gestao,))
-            despesa = cursor.fetchone()
-
-            if despesa:
-                st.session_state["despesa_edicao"] = {
-                    "id": id_editar_gestao,
-                    "data": despesa[0],
-                    "categoria": despesa[1],
-                    "descricao": despesa[2],
-                    "valor": float(despesa[3]),
-                    "fornecedor": despesa[4],
-                    "fase_obra": despesa[5],
-                    "forma_pagamento": despesa[6]
-                }
-            else:
-                st.warning("ID não encontrado.")
-
-        if "despesa_edicao" in st.session_state:
-            desp = st.session_state["despesa_edicao"]
-
+        if mobile:
             col1, col2 = st.columns(2)
 
             with col1:
-                nova_data = st.date_input("Nova data", value=desp["data"], key="edit_data")
-                nova_categoria = st.text_input("Nova categoria", value=desp["categoria"], key="edit_categoria")
-                nova_descricao = st.text_input("Nova descrição", value=desp["descricao"], key="edit_descricao")
-                novo_valor = st.number_input("Novo valor", value=desp["valor"], key="edit_valor")
-
+                st.metric("Total", f"R$ {total:,.2f}")
             with col2:
-                novo_fornecedor = st.text_input("Novo fornecedor", value=desp["fornecedor"], key="edit_fornecedor")
+                st.metric("Registros", len(df))
 
-                fases = ["fundação", "estrutura", "acabamento"]
-                pagamentos = ["pix", "dinheiro", "cartão", "boleto"]
+            st.metric("Ticket Médio", f"R$ {media:,.2f}")
 
-                nova_fase = st.selectbox(
-                    "Nova fase da obra",
-                    fases,
-                    index=fases.index(desp["fase_obra"]) if desp["fase_obra"] in fases else 0,
-                    key="edit_fase"
-                )
+        else:
+            col1, col2, col3 = st.columns(3)
 
-                novo_pagamento = st.selectbox(
-                    "Nova forma de pagamento",
-                    pagamentos,
-                    index=pagamentos.index(desp["forma_pagamento"]) if desp["forma_pagamento"] in pagamentos else 0,
-                    key="edit_pagamento"
-                )
+            with col1:
+                st.metric("Total", f"R$ {total:,.2f}")
+            with col2:
+                st.metric("Registros", len(df))
+            with col3:
+                st.metric("Ticket Médio", f"R$ {media:,.2f}")
 
-            if st.button("Atualizar despesa", key="btn_atualizar_despesa"):
-                cursor.execute("""
-                    UPDATE despesas_obra
-                    SET data = %s,
-                        categoria = %s,
-                        descricao = %s,
-                        valor = %s,
-                        fornecedor = %s,
-                        fase_obra = %s,
-                        forma_pagamento = %s
-                    WHERE id = %s
-                """, (
-                    nova_data,
-                    nova_categoria,
-                    nova_descricao,
-                    novo_valor,
-                    novo_fornecedor,
-                    nova_fase,
-                    novo_pagamento,
-                    desp["id"]
-                ))
-                conn.commit()
-                st.success("Despesa atualizada com sucesso!")
-                del st.session_state["despesa_edicao"]
-                
-        # -------- EXCLUIR --------
-        st.subheader("🗑️ Excluir despesa")
+        if mobile:
+            st.bar_chart(df.groupby("categoria")["valor"].sum())
+            st.bar_chart(df.groupby("fase")["valor"].sum())
+        else:
+            col1, col2 = st.columns(2)
 
-        id_excluir = st.number_input("ID para excluir", step=1, key="id_excluir")
+            with col1:
+                st.bar_chart(df.groupby("categoria")["valor"].sum())
+            with col2:
+                st.bar_chart(df.groupby("fase")["valor"].sum())
 
-        if st.button("Excluir despesa"):
-            cursor.execute(
-                "DELETE FROM despesas_obra WHERE id = %s",
-                (id_excluir,)
-            )
+# ---------------- GESTÃO ----------------
+with aba3:
+    st.header("Gestão")
+
+    if banco_ok:
+
+        arquivo = df.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            "📂 Baixar CSV",
+            arquivo,
+            "despesas.csv"
+        )
+
+        st.markdown("---")
+
+        id_excluir = st.number_input("ID excluir", min_value=1, key="id_excluir_unico")
+
+        if st.button("Excluir"):
+            cursor.execute("DELETE FROM despesas_obra WHERE id = %s", (id_excluir,))
             conn.commit()
-            st.success("Despesa excluída!")
+            st.success("Excluído")
