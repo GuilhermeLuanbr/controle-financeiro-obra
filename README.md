@@ -16,6 +16,9 @@ Este projeto foi desenvolvido com foco em simular um cenário real de análise d
 - tomada de decisão baseada em dados
 
 # Funcionalidades
+- Cadastro de despesas
+- Armazenamento em banco de dados em nuvem
+- Dashboard interativo
 
 # Cadastro de dados
   # Inserção de despesas com:
@@ -45,6 +48,11 @@ Este projeto foi desenvolvido com foco em simular um cenário real de análise d
 # Análise comparativa
 - comparação com período anterior
 - cálculo de variação percentual (%)
+
+# Como executar
+```bash
+pip install -r requirements.txt
+streamlit run app.py
 
 # Gestão de dados (CRUD)
 - edição de despesas
